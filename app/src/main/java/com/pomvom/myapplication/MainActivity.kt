@@ -198,7 +198,7 @@ class MainActivity : AppCompatActivity() {
             0 -> {
                 // If request is cancelled, the result arrays are empty.
                 if ((grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED)) {
-                    web_view.loadUrl("https://app-test.pomvom.com/demo")
+                    web_view.loadUrl("https://app.pomvom.com/demo")
                 } else {
                     // permission denied, boo! Disable the
                     // functionality that depends on this permission.
@@ -255,7 +255,7 @@ class MainActivity : AppCompatActivity() {
                 // result of the request.
             }
         } else {
-            web_view.loadUrl("https://app-test.pomvom.com/demo")
+            web_view.loadUrl("https://app.pomvom.com/demo")
         }
     }
 }
