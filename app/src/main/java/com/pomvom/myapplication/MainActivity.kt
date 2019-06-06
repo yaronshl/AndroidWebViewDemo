@@ -34,6 +34,8 @@ class MainActivity : AppCompatActivity() {
     private var INPUT_FILE_REQUEST_CODE = 1
     private var FILECHOOSER_RESULTCODE = 1
 
+    private val SERVER_URL = "https://app.pomvom.com/demo"
+
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -198,7 +200,7 @@ class MainActivity : AppCompatActivity() {
             0 -> {
                 // If request is cancelled, the result arrays are empty.
                 if ((grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED)) {
-                    web_view.loadUrl("https://app.pomvom.com/demo")
+                    web_view.loadUrl(SERVER_URL)
                 } else {
                     // permission denied, boo! Disable the
                     // functionality that depends on this permission.
@@ -255,7 +257,7 @@ class MainActivity : AppCompatActivity() {
                 // result of the request.
             }
         } else {
-            web_view.loadUrl("https://app.pomvom.com/demo")
+            web_view.loadUrl(SERVER_URL)
         }
     }
 }
