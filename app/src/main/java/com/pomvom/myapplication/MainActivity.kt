@@ -3,6 +3,9 @@ package com.pomvom.myapplication
 import android.Manifest
 import android.annotation.TargetApi
 import android.app.Activity
+import android.app.DownloadManager
+import android.app.DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED
+import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.net.Uri
@@ -14,6 +17,9 @@ import android.support.v4.app.ActivityCompat
 import android.support.v4.content.FileProvider
 import android.support.v7.app.AppCompatActivity
 import android.util.Log
+import android.view.ContextMenu
+import android.view.MenuItem
+import android.view.View
 import android.webkit.*
 import android.widget.Toast
 import kotlinx.android.synthetic.main.activity_main.*
@@ -25,6 +31,7 @@ import java.util.*
 
 class MainActivity : AppCompatActivity() {
 
+    private val CONTEXT_MENU_ID_DOWNLOAD_IMAGE: Int = 0
     private val TAG = MainActivity::class.java.simpleName
 
     private var mFilePathCallback: ValueCallback<Array<Uri>>? = null
@@ -36,6 +43,8 @@ class MainActivity : AppCompatActivity() {
 
     private val SERVER_URL = "https://app.pomvom.com/demo"
 
+    var mPendingFileDownload: PendingFileDownload? = null
+
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -43,6 +52,7 @@ class MainActivity : AppCompatActivity() {
 
         requestPermissions()
 
+        registerForContextMenu(web_view)
         web_view.setWebViewClient(WebViewClient())
         web_view.settings.javaScriptEnabled = true
         web_view.settings.loadWithOverviewMode = true
@@ -77,6 +87,43 @@ class MainActivity : AppCompatActivity() {
         }
 
         WebView.setWebContentsDebuggingEnabled(true);
+    }
+
+    override fun onCreateContextMenu(menu: ContextMenu, view: View, menuInfo: ContextMenu.ContextMenuInfo?) {
+        web_view.hitTestResult?.let {
+            when (it.type) {
+                WebView.HitTestResult.IMAGE_TYPE,
+                WebView.HitTestResult.SRC_IMAGE_ANCHOR_TYPE -> {
+                    menu.setHeaderTitle(R.string.images_options)
+                    menu.add(0, CONTEXT_MENU_ID_DOWNLOAD_IMAGE, 0, R.string.download_image)
+                }
+                else -> Log.e(TAG, "error downloading image")
+            }
+        }
+    }
+
+    override fun onContextItemSelected(item: MenuItem): Boolean {
+
+        web_view.hitTestResult?.let {
+            val url = it.extra
+
+            if (CONTEXT_MENU_ID_DOWNLOAD_IMAGE == item.itemId) {
+                mPendingFileDownload = PendingFileDownload(url, Environment.DIRECTORY_PICTURES)
+                downloadFileWithPermissionCheck()
+                return true
+            }
+        }
+
+        return super.onContextItemSelected(item)
+    }
+
+    override fun onBackPressed() {
+        if (web_view.canGoBack()) {
+            web_view.goBack()
+        } else {
+            super.onBackPressed()
+        }
+
     }
 
     private fun dispatchTakePictureIntent() {
@@ -258,6 +305,31 @@ class MainActivity : AppCompatActivity() {
             }
         } else {
             web_view.loadUrl(SERVER_URL)
+        }
+    }
+
+    private fun downloadFileWithPermissionCheck() {
+        if (hasPermissions()) {
+            downloadFile()
+        } else {
+            requestPermissions()
+        }
+    }
+
+    private fun downloadFile() {
+        val pending = mPendingFileDownload
+        pending?.let {
+            val uri = Uri.parse(pending.url)
+            val guessedFileName = URLUtil.guessFileName(pending.url, null, null)
+            Log.d(TAG, "Guessed filename of $guessedFileName for url ${pending.url}")
+            val request = DownloadManager.Request(uri).apply {
+                allowScanningByMediaScanner()
+                setDestinationInExternalPublicDir(pending.directory, "image.jpeg")
+                setNotificationVisibility(VISIBILITY_VISIBLE_NOTIFY_COMPLETED)
+            }
+            val manager = getSystemService(Context.DOWNLOAD_SERVICE) as DownloadManager
+            manager.enqueue(request)
+            mPendingFileDownload = null
         }
     }
 }
