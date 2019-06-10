@@ -25,6 +25,7 @@ import android.widget.Toast
 import kotlinx.android.synthetic.main.activity_main.*
 import java.io.File
 import java.io.IOException
+import java.net.URISyntaxException
 import java.text.SimpleDateFormat
 import java.util.*
 
@@ -85,6 +86,25 @@ class MainActivity : AppCompatActivity() {
                 return true
             }
         }
+
+        web_view.webViewClient = object : WebViewClient() {
+            override fun shouldOverrideUrlLoading(view: WebView?, request: WebResourceRequest?): Boolean {
+
+                val uri = request!!.getUrl()
+                if (Objects.equals(uri.getScheme(), "whatsapp") || Objects.equals(uri.getScheme(), "mailto")) {
+                    try {
+                        val intent = Intent.parseUri (request.getUrl().toString(), Intent.URI_INTENT_SCHEME);
+                        if (intent.resolveActivity(getPackageManager()) != null)
+                            startActivity(intent);
+                        return true;
+                    } catch (exception: URISyntaxException) {
+                        Log.e(TAG, exception.localizedMessage);
+                    }
+                }
+                return super.shouldOverrideUrlLoading(view, request)
+            }
+        }
+
 
         WebView.setWebContentsDebuggingEnabled(true);
     }
